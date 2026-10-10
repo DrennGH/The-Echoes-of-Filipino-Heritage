@@ -76,11 +76,14 @@
       .steps span{padding:3px 8px;border:1px solid var(--line)}
       .steps .cur{border-color:var(--terra);color:var(--terra)}
       .note{font-size:13px;color:var(--mute)}
+.mute{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:10;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:10px 16px;font:inherit;font-size:14px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+      .mute.off{color:var(--terra);border-color:var(--terra)}
       @media(prefers-reduced-motion:reduce){.room{animation:none}}
     </style>
   </head>
   <body>
     <nav id="nav" aria-label="Exhibition rooms"><b>Voices of the Philippines</b></nav>
+    <button class="mute" id="muteBtn" aria-pressed="false" aria-label="Mute background music">🔊 Music on</button>
     <main>
       <section class="room on" id="entrance">
         <div class="weave"></div>
@@ -89,7 +92,7 @@
           <h1>THE ECHOES OF FILIPINO HERITAGE</h1>
           <p class="sub">The Cultural Expressions of Masino Intaray and Botong Francisco</p>
           <div class="theme">Preserving and Expressing Filipino Culture</div>
-          <div class="vo" data-audio="intro.mp3" data-vo="Welcome to Voices of the Philippines. [Replace with your short introductory voiceover.]">
+          <div class="vo" data-audio="entrance.m4a" data-vo="Welcome to Voices of the Philippines. [Replace with your short introductory voiceover.]">
             <button class="btn sm ghost">▶ Play voiceover</button>
             <p>Welcome to our Virtual Exhibition Website!.</p>
           </div>
@@ -465,6 +468,7 @@
       document.querySelectorAll(".vo[data-audio]").forEach(box => {
         const audio = new Audio("audio/" + box.dataset.audio);
         audio.preload = "auto";
+        ["play", "pause", "ended"].forEach(ev => audio.addEventListener(ev, updateBgMute));
 
         const button = box.querySelector("button");
         if (!button) return;
@@ -493,7 +497,29 @@
       let backgroundMusicStarted = false;
       let backgroundMusicStarting = false;
 
+      let userMuted = false;
+
+      function updateBgMute() {
+        const voPlaying = currentVoiceover && !currentVoiceover.paused;
+        const trackPlaying = [...document.querySelectorAll("audio")].some(a => !a.paused);
+        backgroundMusic.muted = userMuted || voPlaying || trackPlaying;
+      }
+
+      document.querySelectorAll("audio").forEach(a => {
+        ["play", "pause", "ended"].forEach(ev => a.addEventListener(ev, updateBgMute));
+      });
+
+      const muteBtn = document.getElementById("muteBtn");
+      muteBtn.addEventListener("click", () => {
+        userMuted = !userMuted;
+        muteBtn.textContent = userMuted ? "🔇 Music off" : "🔊 Music on";
+        muteBtn.classList.toggle("off", userMuted);
+        muteBtn.setAttribute("aria-pressed", userMuted);
+        updateBgMute();
+      });
+
       function go(id) {
+        document.querySelectorAll("audio").forEach(a => a.pause());
         if (currentVoiceover) {
           currentVoiceover.pause();
           currentVoiceover.currentTime = 0;
