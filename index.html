@@ -89,12 +89,12 @@
           <h1>THE ECHOES OF FILIPINO HERITAGE</h1>
           <p class="sub">The Cultural Expressions of Masino Intaray and Botong Francisco</p>
           <div class="theme">Preserving and Expressing Filipino Culture</div>
-          <div class="vo" data-vo="Welcome to Voices of the Philippines. [Replace with your short introductory voiceover.]">
-            <button class="btn sm ghost">▶ Welcome voiceover</button>
-            <p>[Short introductory voiceover script goes here.]</p>
+          <div class="vo" data-audio="intro.mp3" data-vo="Welcome to Voices of the Philippines. [Replace with your short introductory voiceover.]">
+            <button class="btn sm ghost">▶ Play voiceover</button>
+            <p>Welcome to our Virtual Exhibition Website!.</p>
           </div>
           <div>
-            <button class="btn" data-go="intro">Start Tour →</button>
+            <button class="btn" data-go="intro" data-start-tour>Start Tour →</button>
           </div>
         </div>
       </section>
@@ -132,7 +132,7 @@
             </ul>
           </div>
         </div>
-        <div class="vo" data-vo="[Briefly explain the purpose of the exhibition and introduce the two artists before visitors enter their galleries.]">
+        <div class="vo" data-audio="intro.m4a" data-vo="[Briefly explain the purpose of the exhibition and introduce the two artists before visitors enter their galleries.]">
           <button class="btn sm ghost">▶ Voiceover</button>
           <p>[Explain the exhibition’s purpose and introduce both artists.]</p>
         </div>
@@ -208,20 +208,16 @@
               <img class="art"
                 src="img/Agung_08.jpg"
                 alt="Basal">
-              <figcaption><b>Basal</b>[Short description]</figcaption>
-              <audio controls aria-label="Basal audio sample"></audio>
             </figure>
             <figure class="star">
               <span class="tag">MUSIC 02</span>
               <img class="art"
                 src="img/kutyapi.jpg"
                 alt="Kulilal">
-              <figcaption><b>Kulilal</b>[Short description]</figcaption>
-              <audio controls aria-label="Kulilal audio sample"></audio>
             </figure>
           </div>
         </div>
-        <div class="vo" data-vo="[Voiceover explaining the cultural significance of the music.]">
+        <div class="vo" data-audio="intaray.m4a" data-vo="[Voiceover explaining the cultural significance of the music.]">
           <button class="btn sm ghost">▶ Voiceover</button>
           <p>[Explain the cultural significance of the music.]</p>
         </div>
@@ -302,7 +298,7 @@
             </figure>
           </div>
         </div>
-        <div class="vo" data-vo="[Voiceover for the Botong Francisco gallery.]">
+        <div class="vo" data-audio="francisco.m4a" data-vo="[Voiceover for the Botong Francisco gallery.]">
           <button class="btn sm ghost">▶ Voiceover</button>
           <p>[Gallery voiceover script.]</p>
         </div>
@@ -377,7 +373,7 @@
             <li>Strengthening appreciation of Filipino heritage</li>
           </ul>
         </div>
-        <div class="vo" data-vo="[Explain how the two artists demonstrate different ways of preserving and communicating Filipino culture.]">
+        <div class="vo" data-audio="comparision.m4a" data-vo="[Explain how the two artists demonstrate different ways of preserving and communicating Filipino culture.]">
           <button class="btn sm ghost">▶ Voiceover</button>
           <p>[Explain the two different ways of preserving Filipino culture.]</p>
         </div>
@@ -403,7 +399,7 @@
           <p class="sub">Their works remind us that preserving culture and continuing to echo those stories with others.</p>
           <h3>Thank you for visiting <i>The Echoes of Filipino Heritage.</i></h3>
           <p class="sub">May the stories, cultures, and traditions you encountered here echo beyond this museum.</p>
-          <div class="vo" data-vo="Filipino art is not only an expression of creativity. It can also preserve memory, communicate history, transmit culture, and help communities remember who they are.">
+          <div class="vo" data-audio="closing.m4a" data-vo="Filipino art is not only an expression of creativity. It can also preserve memory, communicate history, transmit culture, and help communities remember who they are.">
             <button class="btn sm ghost">▶ Closing voiceover</button>
             <p>Reflect on what visitors learned and return to the main theme.</p>
           </div>
@@ -416,17 +412,93 @@
     </main>
 
     <script>
-      const rooms=[["entrance","Entrance"],["intro","Introduction"],["masino","Intaray"],["botong","Francisco"],["analysis","Behind the Exhibition"],["compare","Comparison"],["closing","Closing"]];
-      const nav=document.getElementById("nav");
-      rooms.forEach(([id,l])=>{const b=document.createElement("button");b.textContent=l;b.dataset.go=id;nav.appendChild(b)});
-      function go(id){try{speechSynthesis.cancel()}catch(e){}
-        document.querySelectorAll(".room").forEach(r=>r.classList.toggle("on",r.id===id));
-        nav.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.go===id));scrollTo(0,0)}
-      document.addEventListener("click",e=>{
-        const t=e.target.closest("[data-go]");if(t){go(t.dataset.go);return}
-        const v=e.target.closest(".vo button");
-        if(v){try{speechSynthesis.cancel();speechSynthesis.speak(new SpeechSynthesisUtterance(v.parentElement.dataset.vo))}catch(x){}}
+      const rooms = [
+        ["entrance", "Entrance"],
+        ["intro", "Introduction"],
+        ["masino", "Intaray"],
+        ["botong", "Francisco"],
+        ["analysis", "Behind the Exhibition"],
+        ["compare", "Comparison"],
+        ["closing", "Closing"]
+      ];
+
+      const nav = document.getElementById("nav");
+      rooms.forEach(([id, label]) => {
+        const button = document.createElement("button");
+        button.textContent = label;
+        button.dataset.go = id;
+        nav.appendChild(button);
       });
+
+      // One recorded voiceover plays at a time.
+      let currentVoiceover = null;
+      document.querySelectorAll(".vo[data-audio]").forEach(box => {
+        const audio = new Audio("audio/" + box.dataset.audio);
+        audio.preload = "auto";
+
+        const button = box.querySelector("button");
+        if (!button) return;
+
+        button.addEventListener("click", () => {
+          if (currentVoiceover && currentVoiceover !== audio) {
+            currentVoiceover.pause();
+            currentVoiceover.currentTime = 0;
+          }
+
+          // Clicking the same voiceover restarts that recording.
+          audio.pause();
+          audio.currentTime = 0;
+          currentVoiceover = audio;
+          audio.play().catch(error => {
+            console.error("Could not play voiceover:", box.dataset.audio, error);
+          });
+        });
+      });
+
+      // Background music starts from the actual Start Tour click and keeps
+      // playing while visitors move between rooms or return to the entrance.
+      const backgroundMusic = new Audio("audio/bg-music.mp3");
+      backgroundMusic.loop = true;
+      backgroundMusic.preload = "auto";
+      let backgroundMusicStarted = false;
+      let backgroundMusicStarting = false;
+
+      function go(id) {
+        if (currentVoiceover) {
+          currentVoiceover.pause();
+          currentVoiceover.currentTime = 0;
+          currentVoiceover = null;
+        }
+
+        document.querySelectorAll(".room").forEach(room => {
+          room.classList.toggle("on", room.id === id);
+        });
+        nav.querySelectorAll("button").forEach(button => {
+          button.classList.toggle("on", button.dataset.go === id);
+        });
+        window.scrollTo(0, 0);
+      }
+
+      document.addEventListener("click", event => {
+        const startButton = event.target.closest("[data-start-tour]");
+        if (startButton && !backgroundMusicStarted && !backgroundMusicStarting) {
+          backgroundMusicStarting = true;
+          backgroundMusic.play().then(() => {
+            backgroundMusicStarted = true;
+          }).catch(error => {
+            // A future Start Tour click can retry if playback failed.
+            console.error("Could not play background music at audio/bg-music.mp3:", error);
+          }).finally(() => {
+            backgroundMusicStarting = false;
+          });
+        }
+
+        const navigationButton = event.target.closest("[data-go]");
+        if (navigationButton) {
+          go(navigationButton.dataset.go);
+        }
+      });
+
       go("entrance");
     </script>
   </body>
